@@ -1,0 +1,33 @@
+#!/bin/bash
+set -e
+
+if [ -z "$1" ]
+then
+    echo "The REVIEW_ID argument is mandatory."
+    echo "Usage: $0 REVIEW_ID TESTS_PATH BRANCH_TO_REVERT"
+    exit 1
+fi
+
+REVIEW=$1
+TESTS_PATH=${2:-tests}
+BRANCH_TO_REVERT=${3:-"origin/master"}
+
+# First, we download the review
+git review -d $REVIEW
+LAST_COMMIT=$(git rev-parse HEAD)
+
+# Now, we revert everything that aren't tests
+NO_TEST_FILES=$(git diff-tree --no-commit-id --name-only -r $LAST_COMMIT | grep -v $TESTS_PATH)
+TEST_FILES=$(git diff-tree --no-commit-id --name-only -r $LAST_COMMIT | grep $TESTS_PATH)
+
+git checkout $BRANCH_TO_REVERT $NO_TEST_FILES &> /dev/null || true
+
+# Run tests without the fix
+for i in "${TEST_FILES[@]}"
+do
+    TEST_BASE_NAME=$(basename $i)
+    tox -e py27,py34 ${TEST_BASE_NAME%.*} || true
+done
+
+# Revert the commit
+git reset --hard $LAST_COMMIT &> /dev/null
