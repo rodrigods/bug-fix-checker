@@ -1,5 +1,5 @@
 DOES THE COMMIT REALLY FIXES THE BUG?
-=====================================
+-------------------------------------
 
 In OpenStack, provide unit tests in a bug fix is "almost" mandatory, since as
 any rule, there are exceptions. As a reviewer, isn't always clear that the
